@@ -1,0 +1,9 @@
+java -cp server/build/libs/server-1.0-SNAPSHOT.jar:common/build/libs/common-1.0-SNAPSHOT.jar org.example.server.MainServer 5000
+
+java -cp server/build/libs/server-1.0-SNAPSHOT.jar:common/build/libs/common-1.0-SNAPSHOT.jar org.example.server.MainServer 5001
+
+java -cp client/build/libs/client-1.0-SNAPSHOT.jar:common/build/libs/common-1.0-SNAPSHOT.jar org.example.client.MainClient task-module/build/libs/task-module-1.0-SNAPSHOT.jar "localhost:5000;localhost:5001"
+
+./gradlew :task-module:shadowJar
+
+./gradlew clean build

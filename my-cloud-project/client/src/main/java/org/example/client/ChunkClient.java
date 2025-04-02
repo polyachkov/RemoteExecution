@@ -28,17 +28,34 @@ public class ChunkClient {
         List<List<T>> chunks = splitIntoChunks(data, chunkSize);
 
         List<R> allResults = new ArrayList<>();
+
+        // Многопоточное выполнение
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(servers.size());
+        List<java.util.concurrent.Callable<List<R>>> tasks = new ArrayList<>();
+
         for (int i = 0; i < servers.size(); i++) {
             if (i < chunks.size()) {
-                List<T> chunk = chunks.get(i);
-                String server = servers.get(i);
+                final List<T> chunk = chunks.get(i);
+                final String server = servers.get(i);
 
-                List<R> partial = remoteMapInvoke(server, chunk, className, methodName);
-                allResults.addAll(partial);
+                tasks.add(() -> remoteMapInvoke(server, chunk, className, methodName));
             }
         }
+
+        try {
+            List<java.util.concurrent.Future<List<R>>> futures = executor.invokeAll(tasks);
+            for (var future : futures) {
+                allResults.addAll(future.get()); // собираем результат
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("parallel execution failed", e);
+        } finally {
+            executor.shutdown();
+        }
+
         return allResults;
     }
+
 
     @SuppressWarnings("unchecked")
     private static <T, R> List<R> remoteMapInvoke(String serverAddr, List<T> chunk, String className, String methodName) {
